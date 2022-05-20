@@ -14,7 +14,7 @@ import "./WithCallback.sol";
  */
 contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCallback {
 
-    mapping(address => bool) public unpausable;
+    mapping(address => uint256) public unpausable;
     mapping (address => mapping (address => uint8)) public votes;
     
     mapping (address => uint8) public pauseVote; 
@@ -30,7 +30,7 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
     }
 
     modifier notPaused(address account) {
-        require(!paused() || unpausable[account]>requiredQorum, "Pausable: paused");
+        require(!paused() || unpausableCheck(account), "Pausable: paused");
         _;
     }
 
@@ -67,9 +67,9 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
 
     function sealDaoNow() public isCreator daoIsNotSealed returns(bool){
         if(daoMembers.length>1){
-            daolSeal=true;}
+            daoSeal=true;}
     
-    return daolSeal;
+    return daoSeal;
     }
 
     function requiredQorum() public view returns(uint256 qorum){
@@ -108,6 +108,14 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
         }
     }
 
+    function unpausableCheck(address account) public view returns(bool paused){
+if(unpausable[account]>requiredQorum()){
+    paused=true;
+}
+else {paused=false;}
+
+    }
+
     function pauseCheckUp() public daoMemberCheck {
     require(pauseVote[msg.sender]<2);
     pauseVote[msg.sender]=2;
@@ -121,7 +129,7 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
 
     } 
     function pausecheck() public view returns(bool checker){
-        if(pauseNow>qorum){
+        if(pauseNow>requiredQorum()){
             return true;
         } else {return false;}
     }
