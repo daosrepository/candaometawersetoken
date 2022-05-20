@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: All rights reserved
 
 pragma solidity 0.8.1;
 
@@ -7,11 +7,15 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IERC20Cutted.sol";
 import "./RecoverableFunds.sol";
 import "./CandaoToken.sol";
-//import "@openzeppelin/constracts/token/ERC20/utils/SafeERC20.sol";
+//import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+//import "../../../utils/Address.sol";
 
 contract VestingWallet is Pausable, RecoverableFunds {
 
     using SafeMath for uint256;
+
+    using Address for address;
 
     struct VestingSchedule {
         uint256 delay;      // the amount of time before vesting starts
@@ -46,8 +50,8 @@ contract VestingWallet is Pausable, RecoverableFunds {
     event WithdrawalIsActive();
     event setedToken(address setedTokenAddress);
     event setedPercentRate(uint256 value);
-    event setedBalance(uint8 indexed group, address indexed account, uint256 initial, uint256 withdrawn);
-    event addedBalance(uint8 indexed group, address indexed account, uint256 initial);
+    event setedBalance(uint256 indexed group, address indexed account, uint256 initial, uint256 withdrawn);
+    event addedBalance(uint256 indexed group, address indexed account, uint256 initial);
     event addedGroup(uint256 indexed group,uint256 vestingSchedule);
     event updatedGroup(uint256 indexed group, uint8 vestingSchedule);
     event deletedGroup(uint256 group);
@@ -109,7 +113,8 @@ contract VestingWallet is Pausable, RecoverableFunds {
     function addGroup(uint8 vestingSchedule) public onlyOwner {
         require(groups.length < type(uint256).max, "VestingWallet: the maximum number of groups has been reached");
         groups.push(vestingSchedule);
-        emit addedGroup(groups.length,vestingSchedule);
+        uint256 indexGroup=groups.length;
+        emit addedGroup(indexGroup,vestingSchedule);
     }
     // czy to nie powinno byc vesting uint 256 ? co jest wieksze
     function updateGroup(uint256 index, uint8 vestingSchedule) public onlyOwner {
@@ -175,9 +180,26 @@ contract VestingWallet is Pausable, RecoverableFunds {
             }
         }
         require(tokensToSend > 0, "VestingWallet: there are no assets that could be withdrawn from your account");
-        token.transfer(_msgSender(), tokensToSend);
+        safeTransfer(token,_msgSender(), tokensToSend);
         emit Withdrawal(_msgSender(), tokensToSend);
     }
+    function safeTransfer(
+        IERC20Cutted tokenIn,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(tokenIn, abi.encodeWithSelector(token.transfer.selector, to, value));
+    }
+    function _callOptionalReturn(IERC20Cutted token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
+        // the target address contains contract code and also asserts for success in the low-level call.
 
+        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        if (returndata.length > 0) {
+            // Return data is optional
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
 }
 
