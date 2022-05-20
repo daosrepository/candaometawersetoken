@@ -16,6 +16,7 @@ const VESTING_SCHEDULES = [
 ];
 
 describe('VestingWallet', async function () {
+  this.timeout(900000); 
   let token;
   let wallet;
 
@@ -102,6 +103,7 @@ describe('VestingWallet', async function () {
   });
 
   it('should behave correctly while collecting vested amounts from all groups', async function () {
+    this.timeout(100000) 
     const [schedule1, schedule2, schedule3] = VESTING_SCHEDULES;
 
     const amount1 = ether('0.123');
