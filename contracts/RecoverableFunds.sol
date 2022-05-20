@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.1;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IERC20Cutted.sol";
+//import "@openzeppelin/constracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @dev Allows the owner to retrieve ETH or tokens sent to this contract by mistake.
