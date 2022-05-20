@@ -109,10 +109,10 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
     }
 
     function unpausableCheck(address account) public view returns(bool paused){
-if(unpausable[account]>requiredQorum()){
-    paused=true;
-}
-else {paused=false;}
+        if(unpausable[account]>requiredQorum()){
+            paused=true;
+        }
+        else {paused=false;}
 
     }
 
