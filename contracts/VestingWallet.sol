@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.1;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IERC20Cutted.sol";
 import "./RecoverableFunds.sol";
 import "./CandaoToken.sol";
+//import "@openzeppelin/constracts/token/ERC20/utils/SafeERC20.sol";
 
 contract VestingWallet is Pausable, RecoverableFunds {
 
@@ -30,6 +31,9 @@ contract VestingWallet is Pausable, RecoverableFunds {
         uint256 vested;
     }
 
+  
+
+
     IERC20Cutted public token;
     uint256 public percentRate = 100;
     bool public isWithdrawalActive;
@@ -40,6 +44,13 @@ contract VestingWallet is Pausable, RecoverableFunds {
 
     event Withdrawal(address account, uint256 value);
     event WithdrawalIsActive();
+    event setedToken(address setedTokenAddress);
+    event setedPercentRate(uint256 value);
+    event setedBalance(uint8 indexed group, address indexed account, uint256 initial, uint256 withdrawn);
+    event addedBalance(uint8 indexed group, address indexed account, uint256 initial);
+    event addedGroup(uint256 indexed group,uint256 vestingSchedule);
+    event updatedGroup(uint256 indexed group, uint8 vestingSchedule);
+    event deletedGroup(uint256 group);
 
     function pause() public onlyOwner {
         _pause();
@@ -57,17 +68,21 @@ contract VestingWallet is Pausable, RecoverableFunds {
     }
 
     function setToken(address newTokenAddress) public onlyOwner {
+        //if(token)
         token = IERC20Cutted(newTokenAddress);
+        emit setedToken(newTokenAddress);
     }
 
     function setPercentRate(uint256 newPercentRate) public onlyOwner {
         percentRate = newPercentRate;
+        emit setedPercentRate(newPercentRate);
     }
 
     function setBalance(uint8 group, address account, uint256 initial, uint256 withdrawn) public onlyOwner {
         Balance storage balance = balances[group][account];
         balance.initial = initial;
         balance.withdrawn = withdrawn;
+        emit setedBalance(group,account,initial,withdrawn);
     }
 
     function addBalances(uint8 group, address[] calldata addresses, uint256[] calldata amounts) public onlyOwner {
@@ -75,6 +90,7 @@ contract VestingWallet is Pausable, RecoverableFunds {
         for (uint256 i = 0; i < addresses.length; i++) {
             Balance storage balance = balances[group][addresses[i]];
             balance.initial = balance.initial.add(amounts[i]);
+            emit addedBalance(group,addresses[i],amounts[i]);
         }
     }
 
@@ -93,11 +109,13 @@ contract VestingWallet is Pausable, RecoverableFunds {
     function addGroup(uint8 vestingSchedule) public onlyOwner {
         require(groups.length < type(uint256).max, "VestingWallet: the maximum number of groups has been reached");
         groups.push(vestingSchedule);
+        emit addedGroup(groups.length,vestingSchedule);
     }
-
+    // czy to nie powinno byc vesting uint 256 ? co jest wieksze
     function updateGroup(uint256 index, uint8 vestingSchedule) public onlyOwner {
         require(index < groups.length, "VestingWallet: wrong group index");
         groups[index] = vestingSchedule;
+        emit updatedGroup(index,vestingSchedule);
     }
 
     function deleteGroup(uint256 index) public onlyOwner {
@@ -106,6 +124,9 @@ contract VestingWallet is Pausable, RecoverableFunds {
             groups[i] = groups[i + 1];
         }
         groups.pop();
+    // czy to dziala ? dobrze i jak dziala to trzeba uwzglednic potem wpisywanie vestingu ludziom w nowym indeksie grup
+     emit  deletedGroup(index);
+
     }
 
     function calculateVestedAmount(Balance memory balance, VestingSchedule memory schedule) internal view returns (uint256) {
