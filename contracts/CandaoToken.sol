@@ -14,23 +14,26 @@ import "./WithCallback.sol";
  */
 contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCallback {
 
-    mapping(address => uint256) public unpausable;
-    mapping (address => mapping (address => uint8)) public votes;
-    
-    mapping (address => uint8) public pauseVote; 
-    
+
+    address[] public daoMembers;
     uint256 pauseNow=0;
 
     address public creator;
     bool public daoSeal =false;
-
+    uint256 public finalQorum=0;
+    mapping(address => uint8) public unpausable;
+    mapping (address => mapping (address => uint8)) public votes;
+    
+    mapping (address => uint8) public pauseVote; 
+    mapping (address => bool) public isDaoMember;
+    
     modifier daoIsNotSealed(){
         require(!daoSeal, "Sealed: no more members");
         _;
     }
 
     modifier notPaused(address account) {
-        require(!paused() || unpausableCheck(account), "Pausable: paused");
+        require(!paused() || unpausable[account]>finalQorum, "Pausable: paused");
         _;
     }
 
@@ -62,14 +65,13 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
         }
     }
 
-    mapping (address => bool) public isDaoMember;
-    address[] public daoMembers;
+
 
     function sealDaoNow() public isCreator daoIsNotSealed returns(bool){
         if(daoMembers.length>1){
-            daoSeal=true;}
+            daolSeal=true;}
     
-    return daoSeal;
+    return daolSeal;
     }
 
     function requiredQorum() public view returns(uint256 qorum){
@@ -88,6 +90,7 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
         isDaoMember[daoMember] = true;
         daoMembers.push(daoMember);
         emit daoMemberAddition(daoMember);
+        finalQorum=requiredQorum;
     }
 
     function addToWhitelist(address[] memory accounts) public daoMemberCheck {
@@ -107,7 +110,7 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
             unpausable[accounts[i]] = unpausable[accounts[i]] -1;
         }
     }
-
+    // this is for individual accout address
     function unpausableCheck(address account) public view returns(bool paused){
         if(unpausable[account]>requiredQorum()){
             paused=true;
@@ -115,7 +118,7 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
         else {paused=false;}
 
     }
-
+    // this is pause for whole Token
     function pauseCheckUp() public daoMemberCheck {
     require(pauseVote[msg.sender]<2);
     pauseVote[msg.sender]=2;
@@ -129,7 +132,7 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
 
     } 
     function pausecheck() public view returns(bool checker){
-        if(pauseNow>requiredQorum()){
+        if(pauseNow>finalQorum){
             return true;
         } else {return false;}
     }
