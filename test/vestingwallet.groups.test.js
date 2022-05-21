@@ -10,6 +10,7 @@ const GROUPS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const SUPPLY = 100000;
 
 describe('VestingWallet', async function () {
+  this.timeout(900000); 
   let token;
   let wallet;
 
