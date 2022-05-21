@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: All rights reserved
+// SPDX-License-Identifier: UNLICENSED
 
 pragma solidity 0.8.1;
 
@@ -40,11 +40,54 @@ contract VestingWallet is Pausable, RecoverableFunds {
 
     IERC20Cutted public token;
     uint256 public percentRate = 100;
-    bool public isWithdrawalActive;
+    bool public isWithdrawalActive = false;
     uint256 public withdrawalStartDate;
     mapping(uint8 => VestingSchedule) public vestingSchedules;
     mapping(uint8 => mapping(address => Balance)) public balances;
     uint8[] public groups;
+
+   mapping(address => bool) public unpausable;
+    mapping (address => mapping (address => uint8)) public votes;
+    mapping (uint8 => uint8) public votesForTopicsCount; // 1 withdrawal
+    mapping (address => bool) public votesForTopicsDone; 
+    
+    mapping (address => uint8) public pauseVote; 
+    
+    uint256 pauseNow=0;
+
+    address public creator;
+    bool public daoSeal =false;
+
+    modifier daoIsNotSealed(){
+        require(!daoSeal, "Sealed: no more members");
+        _;
+    }
+
+    modifier notPaused(address account) {
+        require(!paused() || unpausable[account]>requiredQorum, "Pausable: paused");
+        _;
+    }
+
+    modifier isCreator() {
+        require(address(msg.sender)==creator, "You are not creator");
+        _;
+    }
+
+    modifier notNull(address _address) {
+        require(_address != address(0));
+        _;
+    }
+
+    modifier daoMemberDoesNotExist(address daoMember) {
+        require(!isDaoMember[daoMember]);
+        _;
+    }
+    modifier daoMemberCheck() {
+        require(isDaoMember[msg.sender]);
+        _;
+    }
+
+    event daoMemberAddition(address indexed daoMember);
 
     event Withdrawal(address account, uint256 value);
     event WithdrawalIsActive();
@@ -56,40 +99,89 @@ contract VestingWallet is Pausable, RecoverableFunds {
     event updatedGroup(uint256 indexed group, uint8 vestingSchedule);
     event deletedGroup(uint256 group);
 
-    function pause() public onlyOwner {
+    function pauseCheckUp() public daoMemberCheck {
+    require(pauseVote[msg.sender]<2);
+    pauseVote[msg.sender]=2;
+    pauseNow=pauseNow+1;
+    } 
+    
+    function pauseCheckDown() public daoMemberCheck {
+    require(pauseVote[msg.sender]!=1);
+    pauseVote[msg.sender]=1;
+    pauseNow=pauseNow-1;
+
+    } 
+    function pausecheck() public view returns(bool checker){
+        if(pauseNow>qorum){
+            return true;
+        } else {return false;}
+    }
+
+    function pause() public {
+    if(pausecheck()){
         _pause();
     }
+    }
 
-    function unpause() public onlyOwner {
+    function unpause() public {
+    if(!pausecheck()){
         _unpause();
     }
-
-    function activateWithdrawal() public onlyOwner {
-        require(!isWithdrawalActive, "VestingWallet: withdrawal is already enabled");
-        isWithdrawalActive = true;
-        withdrawalStartDate = block.timestamp;
-        emit WithdrawalIsActive();
     }
 
-    function setToken(address newTokenAddress) public onlyOwner {
-        //if(token)
+    function setToken(address newTokenAddress) public isCreator returns(address tokenA){
+        tokenA =address(token);
+        if(!(tokenA!=address(0x0))){
         token = IERC20Cutted(newTokenAddress);
         emit setedToken(newTokenAddress);
+        return tokenA = address(token);
+        }
     }
 
-    function setPercentRate(uint256 newPercentRate) public onlyOwner {
-        percentRate = newPercentRate;
+
+    function setPercentRate(uint256 newPercentRate) public isCreator daoIsNotSealed {
+        percentRate = newPercentRate; // percentRate is only for Unlocking initial tokens
         emit setedPercentRate(newPercentRate);
     }
 
-    function setBalance(uint8 group, address account, uint256 initial, uint256 withdrawn) public onlyOwner {
+
+    function activateWithdrawal() public onlyOwner {
+        require(!isWithdrawalActive, "VestingWallet:  withdrawal is already enabled ");
+        require(!votesForTopicsDone, "VestingWallet: you already voted to enable withdrawal ");
+
+    votesForTopicsDone[msg.sender]=true;
+    votesForTopicsCount[1]=votesForTopicsCount[1]+1; // 1st topic - withdrawal
+       if(isWithdrawalActiveCheck()){
+           isWithdrawalActive=true;
+        withdrawalStartDate = block.timestamp;
+        emit WithdrawalIsActivated();
+       }
+    }
+
+function isWithdrawalActiveCheck() public view return(bool active){
+
+if(votesForTopicsCount[1]>requiredQorum()){
+    return active=true;
+} else {
+    return active=false;
+    }
+}
+    
+    function requiredQorum() public view returns(uint256 qorum){
+    
+    qorum=daoMembers.length/2;
+
+    }
+
+
+    function setBalance(uint8 group, address account, uint256 initial, uint256 withdrawn) public isCreator {
         Balance storage balance = balances[group][account];
         balance.initial = initial;
         balance.withdrawn = withdrawn;
         emit setedBalance(group,account,initial,withdrawn);
     }
 
-    function addBalances(uint8 group, address[] calldata addresses, uint256[] calldata amounts) public onlyOwner {
+    function addBalances(uint8 group, address[] calldata addresses, uint256[] calldata amounts) public isCreator {
         require(addresses.length == amounts.length, "VestingWallet: incorrect array length");
         for (uint256 i = 0; i < addresses.length; i++) {
             Balance storage balance = balances[group][addresses[i]];
@@ -98,7 +190,7 @@ contract VestingWallet is Pausable, RecoverableFunds {
         }
     }
 
-    function setVestingSchedule(uint8 index, uint256 delay, uint256 duration, uint256 interval, uint256 unlocked) public onlyOwner {
+    function setVestingSchedule(uint8 index, uint256 delay, uint256 duration, uint256 interval, uint256 unlocked) public isCreator {
         VestingSchedule storage schedule = vestingSchedules[index];
         schedule.delay = delay;
         schedule.duration = duration;
@@ -106,24 +198,22 @@ contract VestingWallet is Pausable, RecoverableFunds {
         schedule.unlocked = unlocked;
     }
 
-    function groupsCount() public view returns (uint256) {
-        return groups.length;
-    }
 
-    function addGroup(uint8 vestingSchedule) public onlyOwner {
+
+    function addGroup(uint8 vestingSchedule) public isCreator {
         require(groups.length < type(uint256).max, "VestingWallet: the maximum number of groups has been reached");
         groups.push(vestingSchedule);
         uint256 indexGroup=groups.length;
         emit addedGroup(indexGroup,vestingSchedule);
     }
     // czy to nie powinno byc vesting uint 256 ? co jest wieksze
-    function updateGroup(uint256 index, uint8 vestingSchedule) public onlyOwner {
+    function updateGroup(uint256 index, uint8 vestingSchedule) public isCreator {
         require(index < groups.length, "VestingWallet: wrong group index");
         groups[index] = vestingSchedule;
         emit updatedGroup(index,vestingSchedule);
     }
 
-    function deleteGroup(uint256 index) public onlyOwner {
+    function deleteGroup(uint256 index) public isCreator {
         require(index < groups.length, "VestingWallet: wrong group index");
         for (uint256 i = index; i < groups.length - 1; i++) {
             groups[i] = groups[i + 1];
@@ -132,6 +222,10 @@ contract VestingWallet is Pausable, RecoverableFunds {
     // czy to dziala ? dobrze i jak dziala to trzeba uwzglednic potem wpisywanie vestingu ludziom w nowym indeksie grup
      emit  deletedGroup(index);
 
+    }
+
+    function groupsCount() public view returns (uint256) {
+        return groups.length;
     }
 
     function calculateVestedAmount(Balance memory balance, VestingSchedule memory schedule) internal view returns (uint256) {
