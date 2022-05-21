@@ -65,6 +65,7 @@ describe('VestingWallet', async function () {
   it('should allow withdrawal of tokens in accordance with the vesting schedule', async function () {
     const { delay, duration, interval, unlocked } = VESTING_SCHEDULES[0];
     const amount = ether('0.123');
+    console.log("amount:"+amount);
     await wallet.setBalance(0, account1, amount, 0, { from: owner });
     await wallet.activateWithdrawal({ from: owner });
 
@@ -76,14 +77,15 @@ describe('VestingWallet', async function () {
     const { tx: tx1 } = await wallet.withdraw({ from: account1 });
     const tranche1 = new BN((await getEvents(tx1, token, 'Transfer', web3))[0].args.value);
     expect(tranche1).to.be.bignumber.equal(amount.mul(new BN(unlocked)).div(new BN(100)));
-
+    console.log("tranche1: " + tranche1);
+    
     // week 13
     await time.increase(interval);
     const { tx: tx2 } = await wallet.withdraw({ from: account1 });
     const tranche2 = new BN((await getEvents(tx2, token, 'Transfer', web3))[0].args.value);
     expect(tranche2).to.be.bignumber.equal(amount.mul(interval).div(duration));
     expect((await wallet.getAccountInfo(account1)).withdrawn).to.be.bignumber.equal(tranche1.add(tranche2));
-
+    console.log("tranche2: " + tranche2);
     // week 14
     await time.increase(interval);
     const { tx: tx3 } = await wallet.withdraw({ from: account1 });
