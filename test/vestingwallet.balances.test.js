@@ -10,11 +10,12 @@ const [owner, account1, account2] = accounts;
 const GROUPS = [1, 2];
 const SUPPLY = 100000;
 const VESTING_SCHEDULES = [
-  { index: 1, delay: time.duration.weeks(24), duration: time.duration.weeks(104), interval: time.duration.weeks(1), unlocked: 4 },
-  { index: 2, delay: time.duration.weeks(24), duration: time.duration.weeks(104), interval: time.duration.weeks(1), unlocked: 6 }
+  { index: 1, delay: time.duration.weeks(24), duration: time.duration.weeks(78), interval: time.duration.weeks(1), unlocked: 4 },
+  { index: 2, delay: time.duration.weeks(24), duration: time.duration.weeks(78), interval: time.duration.weeks(1), unlocked: 6 }
 ];
 
 describe('VestingWallet', async function () {
+  this.timeout(900000); 
   let token;
   let wallet;
 
