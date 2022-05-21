@@ -246,6 +246,7 @@ function sealingAllBalances() isDaoMember returns(bool){
         balance.initial = initial;
         balance.withdrawn = withdrawn;
         emit setedBalance(group,account,initial,withdrawn);
+        totalBallancesSet = totalBallancesSet + initial;
     }
 
     function addBalances(uint8 group, address[] calldata addresses, uint256[] calldata amounts) public isCreator {
@@ -255,6 +256,7 @@ function sealingAllBalances() isDaoMember returns(bool){
             Balance storage balance = balances[group][addresses[i]];
             balance.initial = balance.initial.add(amounts[i]);
             emit addedBalance(group,addresses[i],amounts[i]);
+            totalBallancesSet = totalBallancesSet + amounts[i];
         }
     }
 
@@ -346,6 +348,7 @@ function sealingAllBalances() isDaoMember returns(bool){
         require(tokensToSend > 0, "VestingWallet: there are no assets that could be withdrawn from your account");
         safeTransfer(token,_msgSender(), tokensToSend);
         emit Withdrawal(_msgSender(), tokensToSend);
+        totalBallancesSet = totalBallancesSet - tokensToSend;
     }
     function safeTransfer(
         IERC20Cutted tokenIn,
@@ -364,6 +367,34 @@ function sealingAllBalances() isDaoMember returns(bool){
             // Return data is optional
             require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
         }
+    }
+    // RecoverableFunds
+
+    address public nativeToken=address(0x0);
+    uint256 public totalBallancesSet=0;
+
+    function setNativeToken(address nativeTokenNew) public onlyOwner returns(address){
+    if(nativeToken!=address(0x0)) {revert();}
+    nativeToken=nativeTokenNew;
+    
+    return nativeToken;
+    }
+
+    function retrieveTokens(address recipient, address anotherToken) public virtual onlyOwner {
+        IERC20Cutted alienToken = IERC20Cutted(anotherToken);
+        if(nativeToken==anotherToken){
+            require(totalBallancesSet<alienToken.balanceOf(address(this)),"Tokens here are granted to Users");
+
+            uint256 tranferAmount = alienToken.balanceOf(address(this)-totalBallancesSet;
+            alienToken.safeTransfer(recipient, tranferAmount);
+            
+            } else { // not native token
+        alienToken.safeTransfer(recipient, alienToken.balanceOf(address(this)));
+            }
+    }
+
+    function retriveETH(address payable recipient) public virtual onlyOwner {
+        recipient.transfer(address(this).balance);
     }
 }
 
