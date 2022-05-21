@@ -46,17 +46,23 @@ contract VestingWallet is Pausable, RecoverableFunds {
     mapping(uint8 => mapping(address => Balance)) public balances;
     uint8[] public groups;
 
-   mapping(address => bool) public unpausable;
-    mapping (address => mapping (address => uint8)) public votes;
-    mapping (uint8 => uint8) public votesForTopicsCount; // 1 withdrawal
-    mapping (address => bool) public votesForTopicsDone; 
-    
-    mapping (address => uint8) public pauseVote; 
-    
     uint256 pauseNow=0;
 
     address public creator;
     bool public daoSeal =false;
+    bool public areAllBalancesSealed=false;
+    bool public isVestingScheduled=false;
+    bool public areGroupsSealed=false;
+
+
+    mapping(uint256 => bool) isGroupsSealed;
+    mapping(address => bool) public unpausable;
+    mapping (address => mapping (address => uint8)) public votes;
+    mapping (uint8 => uint8) public votesForTopicsCount; // 1 withdrawal
+    mapping (uint256 => mapping (address => bool)) public votesForTopicsDone;
+    mapping (address => uint8) public pauseVote; 
+    
+
 
     modifier daoIsNotSealed(){
         require(!daoSeal, "Sealed: no more members");
@@ -87,6 +93,9 @@ contract VestingWallet is Pausable, RecoverableFunds {
         _;
     }
 
+    event allBalancesAreSealed(uint256 itsTimeOfSeal);
+    event allGroupsAreSealed(uint256 itsTimeOfSeal);
+    event groupsSealed(uint256 indexed groupIndex, uint256 itsTimeOfSeal);
     event daoMemberAddition(address indexed daoMember);
 
     event Withdrawal(address account, uint256 value);
@@ -147,9 +156,9 @@ contract VestingWallet is Pausable, RecoverableFunds {
 
     function activateWithdrawal() public onlyOwner {
         require(!isWithdrawalActive, "VestingWallet:  withdrawal is already enabled ");
-        require(!votesForTopicsDone, "VestingWallet: you already voted to enable withdrawal ");
+        require(!votesForTopicsDone[1][msg.sender], "VestingWallet: you already voted to enable withdrawal ");
 
-    votesForTopicsDone[msg.sender]=true;
+    votesForTopicsDone[1][msg.sender]=true;
     votesForTopicsCount[1]=votesForTopicsCount[1]+1; // 1st topic - withdrawal
        if(isWithdrawalActiveCheck()){
            isWithdrawalActive=true;
@@ -173,8 +182,66 @@ if(votesForTopicsCount[1]>requiredQorum()){
 
     }
 
+    function addTeamDaoMember(address daoMember)
+        public
+        daoMemberDoesNotExist(daoMember)
+        notNull(daoMember)
+        isCreator
+        daoIsNotSealed
+    {
+        isDaoMember[daoMember] = true;
+        daoMembers.push(daoMember);
+        emit daoMemberAddition(daoMember);
+    }
+
+
+function sealingGroup(uint256 groupIndex) isDaoMember returns(bool){
+        require(!isGroupsSealed[10+groupIndex], "VestingWallet:  Group with that index is not for edit anymore ");
+        require(!votesForTopicsDone[10+groupIndex][msg.sender], "VestingWallet: you already voted to seal all groups ");
+
+    votesForTopicsDone[10+groupIndex][msg.sender]=true;
+    votesForTopicsCount[10+groupIndex]=votesForTopicsCount[10+groupIndex]+1; // 1st topic - withdrawal
+       if(votesForTopicsCount[10+groupIndex]>requiredQorum()){
+           isGroupsSealed[10+groupIndex]=true;
+       
+        emit groupsSealed(groupIndex,block.timestamp);
+       }
+       return isGroupsSealed[10+groupIndex];
+    }
+
+function sealingGroups() isDaoMember returns(bool){
+        require(!areGroupsSealed, "VestingWallet:  Groups not for edit anymore ");
+        require(!votesForTopicsDone[3][msg.sender], "VestingWallet: you already voted to seal all groups ");
+
+    votesForTopicsDone[3][msg.sender]=true;
+    votesForTopicsCount[3]=votesForTopicsCount[3]+1; // 1st topic - withdrawal
+       if(votesForTopicsCount[3]>requiredQorum()){
+           areGroupsSealed=true;
+       
+        emit allGroupsAreSealed(block.timestamp);
+       }
+       return areGroupsSealed;
+    }
+
+
+function sealingAllBalances() isDaoMember returns(bool){
+        require(!areAllBalancesSealed, "VestingWallet:  balances not for edit anymore ");
+        require(!votesForTopicsDone[4][msg.sender], "VestingWallet: you already voted to enable withdrawal ");
+
+    votesForTopicsDone[4][msg.sender]=true;
+    votesForTopicsCount[4]=votesForTopicsCount[1]+1; // 1st topic - withdrawal
+       if(votesForTopicsCount[4]>requiredQorum()){
+           areAllBalancesSealed=true;
+       
+        emit allBalancesAreSealed(block.timestamp);
+       }
+       return areAllBalancesSealed;
+    }
+
+
 
     function setBalance(uint8 group, address account, uint256 initial, uint256 withdrawn) public isCreator {
+        require(!areAllBalancesSealed,"Not possible the balances are already sealed by Team Members Dao Sorry");
         Balance storage balance = balances[group][account];
         balance.initial = initial;
         balance.withdrawn = withdrawn;
@@ -182,6 +249,7 @@ if(votesForTopicsCount[1]>requiredQorum()){
     }
 
     function addBalances(uint8 group, address[] calldata addresses, uint256[] calldata amounts) public isCreator {
+        require(!areAllBalancesSealed,"Not possible the balances are already sealed by Team Members Dao Sorry");
         require(addresses.length == amounts.length, "VestingWallet: incorrect array length");
         for (uint256 i = 0; i < addresses.length; i++) {
             Balance storage balance = balances[group][addresses[i]];
@@ -191,6 +259,7 @@ if(votesForTopicsCount[1]>requiredQorum()){
     }
 
     function setVestingSchedule(uint8 index, uint256 delay, uint256 duration, uint256 interval, uint256 unlocked) public isCreator {
+        require(!areGroupsSealed, "VestingWallet:  Groups and vesting  not for edit anymore ");
         VestingSchedule storage schedule = vestingSchedules[index];
         schedule.delay = delay;
         schedule.duration = duration;
@@ -201,6 +270,7 @@ if(votesForTopicsCount[1]>requiredQorum()){
 
 
     function addGroup(uint8 vestingSchedule) public isCreator {
+        require(!areGroupsSealed, "VestingWallet:  Groups not for edit anymore ");
         require(groups.length < type(uint256).max, "VestingWallet: the maximum number of groups has been reached");
         groups.push(vestingSchedule);
         uint256 indexGroup=groups.length;
@@ -214,12 +284,12 @@ if(votesForTopicsCount[1]>requiredQorum()){
     }
 
     function deleteGroup(uint256 index) public isCreator {
+        require(!areGroupsSealed, "VestingWallet:  Groups and vesting  not for edit anymore ");
         require(index < groups.length, "VestingWallet: wrong group index");
         for (uint256 i = index; i < groups.length - 1; i++) {
             groups[i] = groups[i + 1];
         }
         groups.pop();
-    // czy to dziala ? dobrze i jak dziala to trzeba uwzglednic potem wpisywanie vestingu ludziom w nowym indeksie grup
      emit  deletedGroup(index);
 
     }
