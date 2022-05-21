@@ -11,7 +11,7 @@ import "./CandaoToken.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 //import "../../../utils/Address.sol";
 
-contract VestingWallet is Pausable, RecoverableFunds {
+contract VestingWallet is Pausable{
 
     using SafeMath for uint256;
 
@@ -48,6 +48,10 @@ contract VestingWallet is Pausable, RecoverableFunds {
 
     uint256 pauseNow=0;
 
+    address public nativeToken=address(0x0);
+    uint256 public totalBallancesSet=0;
+    address[] public daoMembers;
+    uint256 public finalRequiredQorum=0;
     address public creator;
     bool public daoSeal =false;
     bool public areAllBalancesSealed=false;
@@ -58,10 +62,10 @@ contract VestingWallet is Pausable, RecoverableFunds {
     mapping(uint256 => bool) isGroupsSealed;
     mapping(address => bool) public unpausable;
     mapping (address => mapping (address => uint8)) public votes;
-    mapping (uint8 => uint8) public votesForTopicsCount; // 1 withdrawal
+    mapping (uint256 => uint8) public votesForTopicsCount; // 1 withdrawal
     mapping (uint256 => mapping (address => bool)) public votesForTopicsDone;
     mapping (address => uint8) public pauseVote; 
-    
+    mapping(address => bool) public isDaoMember;
 
 
     modifier daoIsNotSealed(){
@@ -70,7 +74,7 @@ contract VestingWallet is Pausable, RecoverableFunds {
     }
 
     modifier notPaused(address account) {
-        require(!paused() || unpausable[account]>requiredQorum, "Pausable: paused");
+        require(!paused(), "Pausable: paused");
         _;
     }
 
@@ -99,7 +103,7 @@ contract VestingWallet is Pausable, RecoverableFunds {
     event daoMemberAddition(address indexed daoMember);
 
     event Withdrawal(address account, uint256 value);
-    event WithdrawalIsActive();
+    event WithdrawalIsActivated(uint256 itIsTimeToWithdraw);
     event setedToken(address setedTokenAddress);
     event setedPercentRate(uint256 value);
     event setedBalance(uint256 indexed group, address indexed account, uint256 initial, uint256 withdrawn);
@@ -121,7 +125,7 @@ contract VestingWallet is Pausable, RecoverableFunds {
 
     } 
     function pausecheck() public view returns(bool checker){
-        if(pauseNow>qorum){
+        if(pauseNow>finalRequiredQorum){
             return true;
         } else {return false;}
     }
@@ -154,7 +158,7 @@ contract VestingWallet is Pausable, RecoverableFunds {
     }
 
 
-    function activateWithdrawal() public onlyOwner {
+   function activateWithdrawal() public daoMemberCheck {
         require(!isWithdrawalActive, "VestingWallet:  withdrawal is already enabled ");
         require(!votesForTopicsDone[1][msg.sender], "VestingWallet: you already voted to enable withdrawal ");
 
@@ -163,13 +167,13 @@ contract VestingWallet is Pausable, RecoverableFunds {
        if(isWithdrawalActiveCheck()){
            isWithdrawalActive=true;
         withdrawalStartDate = block.timestamp;
-        emit WithdrawalIsActivated();
+        emit WithdrawalIsActivated(withdrawalStartDate);
        }
     }
 
-function isWithdrawalActiveCheck() public view return(bool active){
+function isWithdrawalActiveCheck() public view returns(bool active){
 
-if(votesForTopicsCount[1]>requiredQorum()){
+if(votesForTopicsCount[1]>finalRequiredQorum){
     return active=true;
 } else {
     return active=false;
@@ -192,16 +196,17 @@ if(votesForTopicsCount[1]>requiredQorum()){
         isDaoMember[daoMember] = true;
         daoMembers.push(daoMember);
         emit daoMemberAddition(daoMember);
+        finalRequiredQorum=requiredQorum();
     }
 
 
-function sealingGroup(uint256 groupIndex) isDaoMember returns(bool){
+function sealingGroup(uint256 groupIndex) public daoMemberCheck returns(bool){
         require(!isGroupsSealed[10+groupIndex], "VestingWallet:  Group with that index is not for edit anymore ");
         require(!votesForTopicsDone[10+groupIndex][msg.sender], "VestingWallet: you already voted to seal all groups ");
 
     votesForTopicsDone[10+groupIndex][msg.sender]=true;
     votesForTopicsCount[10+groupIndex]=votesForTopicsCount[10+groupIndex]+1; // 1st topic - withdrawal
-       if(votesForTopicsCount[10+groupIndex]>requiredQorum()){
+       if(votesForTopicsCount[10+groupIndex]>finalRequiredQorum){
            isGroupsSealed[10+groupIndex]=true;
        
         emit groupsSealed(groupIndex,block.timestamp);
@@ -209,13 +214,13 @@ function sealingGroup(uint256 groupIndex) isDaoMember returns(bool){
        return isGroupsSealed[10+groupIndex];
     }
 
-function sealingGroups() isDaoMember returns(bool){
+function sealingGroups() public daoMemberCheck returns(bool){
         require(!areGroupsSealed, "VestingWallet:  Groups not for edit anymore ");
         require(!votesForTopicsDone[3][msg.sender], "VestingWallet: you already voted to seal all groups ");
 
     votesForTopicsDone[3][msg.sender]=true;
     votesForTopicsCount[3]=votesForTopicsCount[3]+1; // 1st topic - withdrawal
-       if(votesForTopicsCount[3]>requiredQorum()){
+       if(votesForTopicsCount[3]>finalRequiredQorum){
            areGroupsSealed=true;
        
         emit allGroupsAreSealed(block.timestamp);
@@ -224,13 +229,13 @@ function sealingGroups() isDaoMember returns(bool){
     }
 
 
-function sealingAllBalances() isDaoMember returns(bool){
+function sealingAllBalances() public daoMemberCheck returns(bool){
         require(!areAllBalancesSealed, "VestingWallet:  balances not for edit anymore ");
         require(!votesForTopicsDone[4][msg.sender], "VestingWallet: you already voted to enable withdrawal ");
 
     votesForTopicsDone[4][msg.sender]=true;
     votesForTopicsCount[4]=votesForTopicsCount[1]+1; // 1st topic - withdrawal
-       if(votesForTopicsCount[4]>requiredQorum()){
+       if(votesForTopicsCount[4]>finalRequiredQorum){
            areAllBalancesSealed=true;
        
         emit allBalancesAreSealed(block.timestamp);
@@ -370,30 +375,28 @@ function sealingAllBalances() isDaoMember returns(bool){
     }
     // RecoverableFunds
 
-    address public nativeToken=address(0x0);
-    uint256 public totalBallancesSet=0;
-
-    function setNativeToken(address nativeTokenNew) public onlyOwner returns(address){
+   
+    function setNativeToken(address nativeTokenNew) public isCreator returns(address){
     if(nativeToken!=address(0x0)) {revert();}
     nativeToken=nativeTokenNew;
     
     return nativeToken;
     }
 
-    function retrieveTokens(address recipient, address anotherToken) public virtual onlyOwner {
+    function retrieveTokens(address recipient, address anotherToken) public virtual daoMemberCheck {
         IERC20Cutted alienToken = IERC20Cutted(anotherToken);
         if(nativeToken==anotherToken){
             require(totalBallancesSet<alienToken.balanceOf(address(this)),"Tokens here are granted to Users");
 
-            uint256 tranferAmount = alienToken.balanceOf(address(this)-totalBallancesSet;
-            alienToken.safeTransfer(recipient, tranferAmount);
+            uint256 tranferAmount = alienToken.balanceOf(address(this)) - totalBallancesSet;
+            safeTransfer(alienToken,recipient, tranferAmount);
             
             } else { // not native token
-        alienToken.safeTransfer(recipient, alienToken.balanceOf(address(this)));
+            safeTransfer(alienToken,recipient, alienToken.balanceOf(address(this)));
             }
     }
 
-    function retriveETH(address payable recipient) public virtual onlyOwner {
+    function retriveETH(address payable recipient) public virtual daoMemberCheck {
         recipient.transfer(address(this).balance);
     }
 }
