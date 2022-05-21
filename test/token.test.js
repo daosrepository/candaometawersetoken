@@ -22,7 +22,7 @@ const initialAccounts = [account1, account2, account3, account4, account5, accou
 const initialBalances = [SUPPLY1, SUPPLY2, SUPPLY3, SUPPLY4, SUPPLY5, SUPPLY6, SUPPLY7, SUPPLY8];
 
 describe('ERC20', function () {
-
+  this.timeout(900000); 
   beforeEach(async function() {
     this.token = await Token.new('Candao', 'CDO', [account1], [SUPPLY1], {from: owner});
   })
@@ -34,7 +34,7 @@ describe('ERC20', function () {
 });
 
 describe('RecoverableFunds', function () {
-
+  this.timeout(900000); 
   beforeEach(async function() {
     this.testedContract = await Token.new('Candao', 'CDO', [account1], [SUPPLY1], {from: owner});
   })
@@ -43,7 +43,7 @@ describe('RecoverableFunds', function () {
 });
 
 describe('CandaoToken', async function () {
-
+  this.timeout(900000); 
   let token;
 
   beforeEach(async function() {
