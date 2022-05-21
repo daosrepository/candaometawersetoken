@@ -10,6 +10,13 @@ import "./interfaces/IERC20Cutted.sol";
  * @dev Allows the owner to retrieve ETH or tokens sent to this contract by mistake.
  */
 contract RecoverableFunds is Ownable {
+    address public nativeToken=address(0x0);
+    function setNativeToken(address nativeTokenNew) public onlyOwner returns(address){
+    if(nativeToken!=address(0x0)) {revert();}
+    nativeToken=nativeTokenNew;
+    
+    return nativeToken;
+    }
 
     function retrieveTokens(address recipient, address anotherToken) public virtual onlyOwner {
         IERC20Cutted alienToken = IERC20Cutted(anotherToken);
