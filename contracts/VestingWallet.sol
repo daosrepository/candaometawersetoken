@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: all rights resereved by Sergei
 
 pragma solidity 0.8.1;
 
@@ -199,7 +199,6 @@ if(votesForTopicsCount[1]>finalRequiredQorum){
         notNull(daoMember)
         onlyOwner
         daoIsNotSealed
-
     {
         isDaoMember[daoMember] = true;
         daoMembers.push(daoMember);
@@ -207,6 +206,14 @@ if(votesForTopicsCount[1]>finalRequiredQorum){
         finalRequiredQorum=requiredQorum();
     }
 
+        
+function sealDao() public onlyOwner daoIsNotSealed
+ returns(bool){
+        if(daoMembers.length>1){
+            daoSeal=true;}
+    
+    return daoSeal;
+    }
 
 function sealingGroup(uint256 groupIndex) public daoMemberCheck returns(bool){
         require(!isGroupsSealed[10+groupIndex], "VestingWallet:  Group with that index is not for edit anymore ");
@@ -384,7 +391,7 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
     // RecoverableFunds
 
    
-    function sesNativeToken() public onlyOwner returns(address){
+    function sesNativeToken() public view onlyOwner returns(address){
     if(nativeToken==address(0x0)) {revert();}
     
     return nativeToken;
