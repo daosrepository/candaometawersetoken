@@ -7,9 +7,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IERC20Cutted.sol";
 import "./RecoverableFunds.sol";
 import "./CandaoToken.sol";
-//import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-//import "../../../utils/Address.sol";
+
 
 contract VestingWallet is Pausable, Ownable{
 
@@ -200,7 +199,7 @@ if(votesForTopicsCount[1]>finalRequiredQorum){
         notNull(daoMember)
         onlyOwner
         daoIsNotSealed
-        retu
+
     {
         isDaoMember[daoMember] = true;
         daoMembers.push(daoMember);
@@ -385,9 +384,8 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
     // RecoverableFunds
 
    
-    function setNativeToken(address nativeTokenNew) public onlyOwner returns(address){
-    if(nativeToken!=address(0x0)) {revert();}
-    nativeToken=nativeTokenNew;
+    function sesNativeToken() public onlyOwner returns(address){
+    if(nativeToken==address(0x0)) {revert();}
     
     return nativeToken;
     }
