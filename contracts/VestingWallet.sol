@@ -11,7 +11,7 @@ import "./CandaoToken.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 //import "../../../utils/Address.sol";
 
-contract VestingWallet is Pausable{
+contract VestingWallet is Pausable, Ownable{
 
     using SafeMath for uint256;
 
@@ -79,7 +79,7 @@ contract VestingWallet is Pausable{
     }
 
     modifier isCreator() {
-        require(address(msg.sender)==creator, "You are not creator");
+        require((address(msg.sender)==creator), "You are not creator");
         _;
     }
 
@@ -112,6 +112,10 @@ contract VestingWallet is Pausable{
     event updatedGroup(uint256 indexed group, uint8 vestingSchedule);
     event deletedGroup(uint256 group);
 
+    constructor() {
+    creator=msg.sender;
+    }
+
     function pauseCheckUp() public daoMemberCheck {
     require(pauseVote[msg.sender]<2);
     pauseVote[msg.sender]=2;
@@ -142,7 +146,11 @@ contract VestingWallet is Pausable{
     }
     }
 
-    function setToken(address newTokenAddress) public isCreator returns(address tokenA){
+    function setToken(address newTokenAddress) public onlyOwner returns(address tokenA){
+     
+        if(nativeToken!=address(0x0)) {revert();}
+        nativeToken=newTokenAddress;
+     
         tokenA =address(token);
         if(!(tokenA!=address(0x0))){
         token = IERC20Cutted(newTokenAddress);
@@ -190,8 +198,9 @@ if(votesForTopicsCount[1]>finalRequiredQorum){
         public
         daoMemberDoesNotExist(daoMember)
         notNull(daoMember)
-        isCreator
+        onlyOwner
         daoIsNotSealed
+        retu
     {
         isDaoMember[daoMember] = true;
         daoMembers.push(daoMember);
@@ -245,7 +254,7 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
 
 
 
-    function setBalance(uint8 group, address account, uint256 initial, uint256 withdrawn) public isCreator {
+    function setBalance(uint8 group, address account, uint256 initial, uint256 withdrawn) public onlyOwner {
         require(!areAllBalancesSealed,"Not possible the balances are already sealed by Team Members Dao Sorry");
         Balance storage balance = balances[group][account];
         balance.initial = initial;
@@ -254,7 +263,7 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
         totalBallancesSet = totalBallancesSet + initial;
     }
 
-    function addBalances(uint8 group, address[] calldata addresses, uint256[] calldata amounts) public isCreator {
+    function addBalances(uint8 group, address[] calldata addresses, uint256[] calldata amounts) public onlyOwner {
         require(!areAllBalancesSealed,"Not possible the balances are already sealed by Team Members Dao Sorry");
         require(addresses.length == amounts.length, "VestingWallet: incorrect array length");
         for (uint256 i = 0; i < addresses.length; i++) {
@@ -265,7 +274,7 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
         }
     }
 
-    function setVestingSchedule(uint8 index, uint256 delay, uint256 duration, uint256 interval, uint256 unlocked) public isCreator {
+    function setVestingSchedule(uint8 index, uint256 delay, uint256 duration, uint256 interval, uint256 unlocked) public onlyOwner {
         require(!areGroupsSealed, "VestingWallet:  Groups and vesting  not for edit anymore ");
         VestingSchedule storage schedule = vestingSchedules[index];
         schedule.delay = delay;
@@ -276,7 +285,7 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
 
 
 
-    function addGroup(uint8 vestingSchedule) public isCreator {
+    function addGroup(uint8 vestingSchedule) public onlyOwner {
         require(!areGroupsSealed, "VestingWallet:  Groups not for edit anymore ");
         require(groups.length < type(uint256).max, "VestingWallet: the maximum number of groups has been reached");
         groups.push(vestingSchedule);
@@ -284,13 +293,13 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
         emit addedGroup(indexGroup,vestingSchedule);
     }
     // czy to nie powinno byc vesting uint 256 ? co jest wieksze
-    function updateGroup(uint256 index, uint8 vestingSchedule) public isCreator {
+    function updateGroup(uint256 index, uint8 vestingSchedule) public onlyOwner {
         require(index < groups.length, "VestingWallet: wrong group index");
         groups[index] = vestingSchedule;
         emit updatedGroup(index,vestingSchedule);
     }
 
-    function deleteGroup(uint256 index) public isCreator {
+    function deleteGroup(uint256 index) public onlyOwner {
         require(!areGroupsSealed, "VestingWallet:  Groups and vesting  not for edit anymore ");
         require(index < groups.length, "VestingWallet: wrong group index");
         for (uint256 i = index; i < groups.length - 1; i++) {
@@ -376,7 +385,7 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
     // RecoverableFunds
 
    
-    function setNativeToken(address nativeTokenNew) public isCreator returns(address){
+    function setNativeToken(address nativeTokenNew) public onlyOwner returns(address){
     if(nativeToken!=address(0x0)) {revert();}
     nativeToken=nativeTokenNew;
     
