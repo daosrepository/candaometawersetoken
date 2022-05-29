@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: all rights resereved by Sergei
+// SPDX-License-Identifier: UNLICENSED
 
 pragma solidity 0.8.1;
 
@@ -58,7 +58,7 @@ contract VestingWallet is Pausable, Ownable{
     bool public areGroupsSealed=false;
 
 
-    mapping(uint256 => bool) isGroupsSealed;
+    mapping(uint256 => bool) public isGroupsSealed;
     mapping(address => bool) public unpausable;
     mapping (address => mapping (address => uint8)) public votes;
     mapping (uint256 => uint8) public votesForTopicsCount; // 1 withdrawal
@@ -221,7 +221,7 @@ function sealingGroup(uint256 groupIndex) public daoMemberCheck returns(bool){
 
     votesForTopicsDone[10+groupIndex][msg.sender]=true;
     votesForTopicsCount[10+groupIndex]=votesForTopicsCount[10+groupIndex]+1; // 1st topic - withdrawal
-       if(votesForTopicsCount[10+groupIndex]>finalRequiredQorum){
+       if(votesForTopicsCount[10+groupIndex]>=finalRequiredQorum){
            isGroupsSealed[10+groupIndex]=true;
        
         emit groupsSealed(groupIndex,block.timestamp);
@@ -235,7 +235,7 @@ function sealingGroups() public daoMemberCheck returns(bool){
 
     votesForTopicsDone[3][msg.sender]=true;
     votesForTopicsCount[3]=votesForTopicsCount[3]+1; // 1st topic - withdrawal
-       if(votesForTopicsCount[3]>finalRequiredQorum){
+       if(votesForTopicsCount[3]>=finalRequiredQorum){
            areGroupsSealed=true;
        
         emit allGroupsAreSealed(block.timestamp);
@@ -261,6 +261,7 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
 
 
     function setBalance(uint8 group, address account, uint256 initial, uint256 withdrawn) public onlyOwner {
+        require(!isGroupsSealed[10+group], "VestingWallet:  Group with that index is not for edit anymore ");
         require(!areAllBalancesSealed,"Not possible the balances are already sealed by Team Members Dao Sorry");
         Balance storage balance = balances[group][account];
         balance.initial = initial;
@@ -306,8 +307,15 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
     }
 
     function deleteGroup(uint256 index) public onlyOwner {
+        require(!isGroupsSealed[10+index], "VestingWallet:  Group with that index is not for edit anymore ");
         require(!areGroupsSealed, "VestingWallet:  Groups and vesting  not for edit anymore ");
         require(index < groups.length, "VestingWallet: wrong group index");
+        for (uint256 i = 1; i < index; i++) {
+            require(!isGroupsSealed[10+i], "VestingWallet: wrong group index groups are started to be sealed");
+        }
+        
+        
+        
         for (uint256 i = index; i < groups.length - 1; i++) {
             groups[i] = groups[i + 1];
         }
