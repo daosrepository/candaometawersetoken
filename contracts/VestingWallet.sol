@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Sergiey
+// SPDX-License-Identifier: UNLICENSED
 
 pragma solidity 0.8.1;
 
@@ -310,7 +310,7 @@ function sealingAllBalances() public daoMemberCheck returns(bool){
         require(!isGroupsSealed[10+index], "VestingWallet:  Group with that index is not for edit anymore ");
         require(!areGroupsSealed, "VestingWallet:  Groups and vesting  not for edit anymore ");
         require(index < groups.length, "VestingWallet: wrong group index");
-        for (uint256 i = index; i =< groups.length; i++) {
+        for (uint256 i = index; i <= groups.length; i++) {
             require(!isGroupsSealed[10+i], "VestingWallet: wrong group index groups are started to be sealed");
         }
         
