@@ -61,11 +61,11 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
 
     constructor(string memory name, string memory symbol, address multisigTeamwalletOther) payable ERC20(name, symbol) {
         creator=address(msg.sender);
-        if(multisigTeamwalletOther != null ){
+        if(multisigTeamwalletOther != address(0x0) ){
         multisigTeamwallet=multisigTeamwalletOther;
-        }
+   
             _mint(multisigTeamwallet, totallBalance);
-        
+             }
     }
 
 
@@ -93,7 +93,7 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
         isDaoMember[daoMember] = true;
         daoMembers.push(daoMember);
         emit daoMemberAddition(daoMember);
-        finalQorum=requiredQorum;
+        finalQorum = requiredQorum();
     }
 
     function addToWhitelist(address[] memory accounts) public daoMemberCheck {
