@@ -17,8 +17,9 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
 
     address[] public daoMembers;
     uint256 pauseNow=0;
-
+    uint256 public totallBalance= 2500000000 * 1 ether;
     address public creator;
+    address public multisigTeamwallet=address(0x0);
     bool public daoSeal =false;
     uint256 public finalQorum=0;
     mapping(address => uint8) public unpausable;
@@ -58,20 +59,22 @@ contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCa
 
     event daoMemberAddition(address indexed daoMember);
 
-    constructor(string memory name, string memory symbol, address[] memory initialAccounts, uint256[] memory initialBalances) payable ERC20(name, symbol) {
+    constructor(string memory name, string memory symbol, address multisigTeamwalletOther) payable ERC20(name, symbol) {
         creator=address(msg.sender);
-        for(uint8 i = 0; i < initialAccounts.length; i++) {
-            _mint(initialAccounts[i], initialBalances[i]);
+        if(multisigTeamwalletOther != null ){
+        multisigTeamwallet=multisigTeamwalletOther;
         }
+            _mint(multisigTeamwallet, totallBalance);
+        
     }
 
 
 
     function sealDaoNow() public isCreator daoIsNotSealed returns(bool){
         if(daoMembers.length>1){
-            daolSeal=true;}
+            daoSeal=true;}
     
-    return daolSeal;
+    return daoSeal;
     }
 
     function requiredQorum() public view returns(uint256 qorum){
