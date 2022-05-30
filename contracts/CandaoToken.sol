@@ -12,7 +12,8 @@ import "./WithCallback.sol";
 /**
  * @dev CandaoToken
  */
-contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCallback {
+//contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds, WithCallback {
+contract CandaoToken is ERC20, ERC20Burnable, Pausable, RecoverableFunds {
 
 
     address[] public daoMembers;
