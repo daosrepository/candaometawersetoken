@@ -7,7 +7,7 @@ contract deployer{
 bool public everUsed = false;
 CandaoToken public OurToken;
 address public ourTokenA = address(0x0);
-address payable ourTeamWalletA = payable(address(0x1357A9f5EC664fB4d22CAa1660442e2Afb01103a));
+address payable ourTeamWalletA = payable(address(0x15973A179D3233aA406F7955BE5667Fd8654b726));
 constructor() {
 }
 
@@ -21,18 +21,15 @@ return ourTokenA;
 
 function configDeploy() public returns(address){
 //configuration of CANDAOToken
-OurToken.addTeamDaoMember(address(0x1357A9f5EC664fB4d22CAa1660442e2Afb01103a));
-
-//Private key: 3491aa2270b51cd9f51048cacc2b8086c33f571e98a322194c30169d00ad12b7
-
-OurToken.addTeamDaoMember(address(0x1));
-OurToken.addTeamDaoMember(address(0x2));
-OurToken.addTeamDaoMember(address(0x3));
-OurToken.addTeamDaoMember(address(0x4));
-OurToken.addTeamDaoMember(address(0x5));
-OurToken.addTeamDaoMember(address(0x6));
-OurToken.addTeamDaoMember(address(0x7));
-OurToken.addTeamDaoMember(address(0x8));
+OurToken.addTeamDaoMember(address(0xc278E7c241E69ceaA342A5Bb51fd96a094DAE303));
+OurToken.addTeamDaoMember(address(0x83eFAC540508fc7E828e892E43d6C729E90E9D52));
+OurToken.addTeamDaoMember(address(0xDcdCd562A96cBC8DF0411560b5344153E0D113E8));
+OurToken.addTeamDaoMember(address(0x63f0d3F78b5dd68Ca3109EaFb590b60A34FaA3b5));
+OurToken.addTeamDaoMember(address(0x352d62F8F153C451C21dde2bB2E7f1792d7d3e3D));
+OurToken.addTeamDaoMember(address(0xb1ac6178AC4510a24868EFB08697cb7A9818425C));
+OurToken.addTeamDaoMember(address(0x55CeF60A19DfC48ed8519819590DE68abB806D28));
+OurToken.addTeamDaoMember(address(0xf6a87b9E684D5Ed3040D46Af3A47e3Ab59d8DB61));
+OurToken.addTeamDaoMember(address(0x5d9150d0ce8e6232C450Cad8A1F66f0818dE9a7E));
 OurToken.sealDaoNow();
 
 return ourTokenA;
