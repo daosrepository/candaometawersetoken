@@ -22,8 +22,8 @@ Candao smart-contract
 
 ### Token distribution
 1. Seed Round: 42 500 000
-2. Round I: 300 000 000
-3. Round II: 32 500 000
+2. Prv sale: 300 000 000
+3. Pub sale (CL): 32 500 000
 4. Ecosystem rewards pool: 725 000 000
 5. Candao Foundation: 375 000 000
 6. Liquidity Pools: 175 000 000
