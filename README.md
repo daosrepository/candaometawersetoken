@@ -21,16 +21,16 @@ Candao smart-contract
 3. _Sale_ - Sale contract
 
 ### Token distribution
-1. Seed Round: 34 000 000
-2. Round I: 100 000 000
-3. Round II: 60 000 000
-4. Ecosystem rewards pool: 672 000 000
-5. Candao Foundation: 550 000 000
-6. Liquidity Pools: 140 000 000
-7. Team: 160 000 000
-8. Strategic partnerships: 200 000 000
-9. Advisors: 60 000 000
-10. Marketing: 134 000 000
+1. Seed Round: 42 500 000
+2. Round I: 300 000 000
+3. Round II: 32 500 000
+4. Ecosystem rewards pool: 725 000 000
+5. Candao Foundation: 375 000 000
+6. Liquidity Pools: 175 000 000
+7. Team: 200 000 000
+8. Strategic partnerships: 300 000 000
+9. Advisors: 200 000 000
+10. Marketing: 150 000 000
 
 ### How to work with this project
 #### To start working with the contracts, please, follow theese steps for each contract:
@@ -60,8 +60,9 @@ Candao smart-contract
 
 ### Wallets with ERC20 support
 1. [MyEtherWallet](https://www.myetherwallet.com)
-2. Parity
-3. Mist/Ethereum wallet
+2. Metamask
+3. Coinbase
+
 
 EXODUS does not support ERC20, but provides the ability to export the private key to MyEtherWallet - http://support.exodus.io/article/128-how-do-i-receive-unsupported-erc20-tokens
 
