@@ -6,7 +6,7 @@
 * _[Name](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md#name)_            : Candao
 * _[Ticker](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md#symbol)_          : CDO
 * _[Decimals](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md#decimals)_        : 18
-* _Emission_        : One-time, 2 000 000 000 tokens
+* _Emission_        : One-time, 2 500 000 000 tokens
 * _Fiat dependency_ : No
 * _Token offers_    : 1
 * _Token locks_     : Yes
